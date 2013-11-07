@@ -56,7 +56,7 @@ namespace Solver
 			{
 				//Console.WriteLine ("Getting next job to process");
 
-				RouteResponse response = client.Get<RouteResponse>("http://homecareintel.com/services/route/1");
+				RouteResponse response = client.Get<RouteResponse>("http://homecareintel.com/services/route/26");
 
 				if(response.drivers.Count > 0)
 				{
@@ -137,8 +137,7 @@ namespace Solver
 
 
 					// get a list of stops from the orders (ie. patients from the visits).  Used for RouteLeg lookup
-					ICollection<RouteStop> stops = orders.Select(x => new RouteStop()
-					                                             { 
+					ICollection<RouteStop> stops = orders.Select(x => new RouteStop(){
 						ID = x.StopID, GeoLat = x.GeoLat, GeoLon = x.GeoLon,
 						Address = x.Address, City = x.City, State = x.State, Zip = x.Zip
 					}).Distinct().ToList();
