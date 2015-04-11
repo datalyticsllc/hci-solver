@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ServiceStack.ServiceClient.Web;
+using System.Data;
+using Npgsql;
 
 namespace Solver
 {
@@ -16,240 +18,38 @@ namespace Solver
 			Distance,
 			Time // not yet used
 		}
-		/*
-		// This method will attempt to geocode and drivers or stops with missing coordinates and will filter out those that were not able to be geocoded.
-		public void GeocodeRouteEntities(ref ICollection<RouteStop> Stops, ref ICollection<RouteDriver> Drivers, ref ICollection<RouteOrder> Orders, int CustomerID)
-		{
-			BingServices bing = new BingServices(BING_API_KEY);
 
-			// get the connection string for the customer, so we can query the RouteLeg table with their drivers and stops
-			CentralUnitOfWork centralUnitOfWork = new CentralUnitOfWork("data source=coordcare.com;Initial Catalog=CoordCareCentral;User Id=CoordCareWeb;Password=n8481m;Persist Security Info=True");
-
-			using (RoutingUnitOfWork unitOfWork = new RoutingUnitOfWork(centralUnitOfWork.ScheduleCustomerRepository.GetByID(CustomerID).ConnectionString))
-			{
-				// Get drivers and geolocate any missing           
-				List<RouteDriver> drivers = unitOfWork.GetRouteDrivers(string.Join(",", from u in Drivers select u.ID.ToString())).ToList();
-				foreach (RouteDriver driver in drivers)
-				{
-					if (!driver.GeoLat.HasValue || !driver.GeoLon.HasValue)
-					{
-						// geo-locate this driver
-						double lat;
-						double lon;
-
-						RouteDriver updater = unitOfWork.RouteDriverRepository.GetByID(driver.ID);
-						if (bing.GeocodeAddress(driver.Address, driver.City, driver.State, driver.Zip, out lat, out lon, BingServices.GeocodeConfidence.Medium) != BingServices.GeocodeConfidence.Zero)
-						{
-							// update the ref driver, we we'll have the geocode for the GetRouteLegs step
-							var dToUpdate = Drivers.Where(x => x.ID == driver.ID);
-							foreach(var d in dToUpdate)
-							{
-								d.GeoLat = lat;
-								d.GeoLon = lon;
-							}
-
-
-							updater.GeoLat = lat;
-							updater.GeoLon = lon;
-							unitOfWork.Save();
-						}
-						else
-						{
-							// unable to geocode, remove this driver from the list
-							Drivers.Remove((from d in Drivers where d.ID == driver.ID select d).FirstOrDefault());
-						}
-					}
-				}
-
-				// Get patients and geolocate any missing           
-				List<RouteStop> stops = unitOfWork.GetRouteStops(string.Join(",", from u in Stops select u.ID.ToString())).ToList();
-				foreach (RouteStop stop in stops)
-				{
-					if (!stop.GeoLat.HasValue || !stop.GeoLon.HasValue)
-					{
-						// geo-locate this stop
-						double lat;
-						double lon;
-
-						RouteStop updater = unitOfWork.RouteStopRepository.GetByID(stop.ID);
-						if (bing.GeocodeAddress(stop.Address, stop.City, stop.State, stop.Zip, out lat, out lon, BingServices.GeocodeConfidence.Medium) != BingServices.GeocodeConfidence.Zero)
-						{
-							// update the ref stop, we we'll have the geocode for the GetRouteLegs step
-							var sToUpdate = Stops.Where(x => x.ID == stop.ID);
-							foreach (var s in sToUpdate)
-							{
-								s.GeoLat = lat;
-								s.GeoLon = lon;
-							}
-
-							updater.GeoLat = lat;
-							updater.GeoLon = lon;
-							unitOfWork.Save();
-						}
-						else
-						{
-							// unable to geocode, remove this stop from the list
-							Stops.Remove((from s in Stops where s.ID == stop.ID select s).FirstOrDefault());
-
-							// need to remove the order associated with the stop that was removed
-							Orders.Remove((from o in Orders where o.StopID == stop.ID select o).FirstOrDefault());
-						}
-					}
-				}
-			}
-		}
-*/
 		// Get distance for every possible combination of driver/stop
-		public ICollection<RouteLeg> GetRouteLegs(ICollection<RouteStop> Stops, ICollection<RouteDriver> Drivers, int CustomerID, CostType CostType)
+		public ICollection<RouteLeg> GetRouteLegs(ICollection<Entity> Entities, List<RouteLeg> RouteLegs, int CustomerID, CostType CostType)
 		{
 			BingServices bing = new BingServices(BING_API_KEY);
-
-			JsonServiceClient client = new JsonServiceClient("http://api.datalyticsllc.com/coordcare");
-
-			RouteLegsResponse responseLegs = client.Get (new GetRouteLegs { 
-				StopList = string.Join(",", from p in Stops select p.ID.ToString()), 
-				DriverList = string.Join(",", from u in Drivers select u.ID.ToString())
-			});
-
-			ICollection<RouteLeg> result = null;
-
-			if(responseLegs.RouteLegs.Count > 0)
-			{
-				result = responseLegs.RouteLegs;
-			}
 
 			// find any gaps in calculations, marked with -1 distance calc
-			if (result.Where (x => x.DrivingDistance == -1).Count () > 0) {
+			if (RouteLegs.Where (x => x.DrivingDistance == -1).Count () > 0) {
 				// fill in the gaps
-				foreach (RouteLeg calc in result.Where(x => x.DrivingDistance == -1)) {
+				foreach (RouteLeg calc in RouteLegs.Where(x => x.DrivingDistance == -1)) {
+
 					// check if the from and to resources are the same resource
-					if (!(calc.FromID == calc.ToID && calc.FromTypeID == calc.ToTypeID)) {
-						// get the patient or user involved
-						if (calc.FromTypeID == 1 && calc.ToTypeID == 1) {
-							RouteStop fromPatient = Stops.Where (x => x.ID == calc.FromID).FirstOrDefault ();
-							RouteStop toPatient = Stops.Where (x => x.ID == calc.ToID).FirstOrDefault ();
+					// also, distance = 0 if they are the same ID, -1 if missing the record
+					// don't need to calculate the distances between the drivers
+					if (!(calc.FromID == calc.ToID) && !(calc.FromTypeID == 2) && !(calc.ToTypeID == 2)) {
 
-							// Ensure that entities involved are routable
-							EnsureEntityIsRoutable (fromPatient);
-							EnsureEntityIsRoutable (toPatient);
+						Entity fromEntity = Entities.Where (x => x.id == calc.FromID).FirstOrDefault ();
+						Entity toEntity = Entities.Where (x => x.id == calc.ToID).FirstOrDefault ();
 
-							// get distance and time
-							double[] bingResult = bing.GetDrivingDistanceAndTimeBetween2Points (
-								Convert.ToDouble (fromPatient.GeoLat),
-								Convert.ToDouble (fromPatient.GeoLon),
-								Convert.ToDouble (toPatient.GeoLat),
-								Convert.ToDouble (toPatient.GeoLon));
+						// get distance and time
+						double[] bingResult = bing.GetDrivingDistanceAndTimeBetween2Points (
+							Convert.ToDouble (fromEntity.geoLat),
+							Convert.ToDouble (fromEntity.geoLon),
+							Convert.ToDouble (toEntity.geoLat),
+							Convert.ToDouble (toEntity.geoLon));
 
-							// store result
-//							unitOfWork.RouteLegRepository.Insert(new RouteLeg()
-//							                                     {
-//								DrivingDistance = Convert.ToDecimal(bingResult[0]),
-//								DrivingTime = Convert.ToDecimal(bingResult[1]),
-//								FromID = calc.FromID,
-//								FromTypeID = 1, // patient
-//								ToID = calc.ToID,
-//								ToTypeID = 1 // patient
-//									// LastModifiedDate = DateTime.Now
-//							});
-//							unitOfWork.Save();
+						InsertRouteLeg (calc.FromID, calc.ToID, Convert.ToDecimal (bingResult [0]), Convert.ToDecimal (bingResult [1]));
 
-							// update result list
-							calc.DrivingDistance = Convert.ToDecimal (bingResult [0]);
-							calc.DrivingTime = Convert.ToDecimal (bingResult [1]);
-						} else if (calc.FromTypeID == 1 && calc.ToTypeID == 2) {
-							RouteStop fromPatient = Stops.Where (x => x.ID == calc.FromID).FirstOrDefault ();
-							RouteDriver toUserAccount = Drivers.Where (x => x.ID == calc.ToID).FirstOrDefault ();
+						// update result list
+						calc.DrivingDistance = Convert.ToDecimal (bingResult [0]);
+						calc.DrivingTime = Convert.ToDecimal (bingResult [1]);
 
-							// Ensure that entities involved are routable
-							EnsureEntityIsRoutable (fromPatient);
-							EnsureEntityIsRoutable (toUserAccount);
-
-							// get distance and time
-							double[] bingResult = bing.GetDrivingDistanceAndTimeBetween2Points (
-								Convert.ToDouble (fromPatient.GeoLat),
-								Convert.ToDouble (fromPatient.GeoLon),
-								Convert.ToDouble (toUserAccount.GeoLat),
-								Convert.ToDouble (toUserAccount.GeoLon));
-
-							// store result
-//							unitOfWork.RouteLegRepository.Insert(new RouteLeg()
-//							                                     {
-//								DrivingDistance = Convert.ToDecimal(bingResult[0]),
-//								DrivingTime = Convert.ToDecimal(bingResult[1]),
-//								FromID = calc.FromID,
-//								FromTypeID = 1, // patient
-//								ToID = calc.ToID,
-//								ToTypeID = 2 // user
-//									//LastModifiedDate = DateTime.Now
-//							});
-//							unitOfWork.Save();
-
-							// update result list
-							calc.DrivingDistance = Convert.ToDecimal (bingResult [0]);
-							calc.DrivingTime = Convert.ToDecimal (bingResult [1]);
-						} else if (calc.FromTypeID == 2 && calc.ToTypeID == 2) {
-							RouteDriver fromUserAccount = Drivers.Where (x => x.ID == calc.FromID).FirstOrDefault ();
-							RouteDriver toUserAccount = Drivers.Where (x => x.ID == calc.ToID).FirstOrDefault ();
-
-							// Ensure that entities involved are routable
-							EnsureEntityIsRoutable (fromUserAccount);
-							EnsureEntityIsRoutable (toUserAccount);
-
-							// get distance and time
-							double[] bingResult = bing.GetDrivingDistanceAndTimeBetween2Points (
-								Convert.ToDouble (fromUserAccount.GeoLat),
-								Convert.ToDouble (fromUserAccount.GeoLon),
-								Convert.ToDouble (toUserAccount.GeoLat),
-								Convert.ToDouble (toUserAccount.GeoLon));
-
-							// store result
-//							unitOfWork.RouteLegRepository.Insert(new RouteLeg()
-//							                                     {
-//								DrivingDistance = Convert.ToDecimal(bingResult[0]),
-//								DrivingTime = Convert.ToDecimal(bingResult[1]),
-//								FromID = calc.FromID,
-//								FromTypeID = 2, // user
-//								ToID = calc.ToID,
-//								ToTypeID = 2 // user
-//									//LastModifiedDate = DateTime.Now
-//							});
-//							unitOfWork.Save();
-
-							// update result list
-							calc.DrivingDistance = Convert.ToDecimal (bingResult [0]);
-							calc.DrivingTime = Convert.ToDecimal (bingResult [1]);
-						} else {// if((calc.FromResourceID.Contains("u") && calc.ToResourceID.Contains("p"))
-							RouteDriver fromUserAccount = Drivers.Where (x => x.ID == calc.FromID).FirstOrDefault ();
-							RouteStop toPatient = Stops.Where (x => x.ID == calc.ToID).FirstOrDefault ();
-
-							// Ensure that entities involved are routable
-							EnsureEntityIsRoutable (fromUserAccount);
-							EnsureEntityIsRoutable (toPatient);
-
-							// get distance and time
-							double[] bingResult = bing.GetDrivingDistanceAndTimeBetween2Points (
-								Convert.ToDouble (fromUserAccount.GeoLat),
-								Convert.ToDouble (fromUserAccount.GeoLon),
-								Convert.ToDouble (toPatient.GeoLat),
-								Convert.ToDouble (toPatient.GeoLon));
-
-							// store result
-//							unitOfWork.RouteLegRepository.Insert(new RouteLeg()
-//							                                     {
-//								DrivingDistance = Convert.ToDecimal(bingResult[0]),
-//								DrivingTime = Convert.ToDecimal(bingResult[1]),
-//								FromID = calc.FromID,
-//								FromTypeID = 2, // user
-//								ToID = calc.ToID,
-//								ToTypeID = 1 // patient
-//									//LastModifiedDate = DateTime.Now
-//							});
-//							unitOfWork.Save();
-
-							// update result list
-							calc.DrivingDistance = Convert.ToDecimal (bingResult [0]);
-							calc.DrivingTime = Convert.ToDecimal (bingResult [1]);
-						}
 					}
 				}
 
@@ -257,10 +57,9 @@ namespace Solver
 
 			List<RouteLeg> legs = new List<RouteLeg>();
 
-			foreach (RouteLeg c in result)
+			foreach (RouteLeg c in RouteLegs)
 			{
-				legs.Add(new RouteLeg
-				         {
+				legs.Add(new RouteLeg{
 					FromID = c.FromID,
 					FromTypeID = c.FromTypeID,
 					ToID = c.ToID,
@@ -273,91 +72,124 @@ namespace Solver
 			return legs;
 		}
 
-		public ICollection<RouteOrderMultiplier> GetRouteMultipliers(ICollection<RouteOrder> Orders, ICollection<RouteDriver> Drivers, IEnumerable<OptimizationTag> Multipliers)
+		public void InsertRouteLeg(Int64 FromId, Int64 ToId, Decimal Distance, Decimal Duration)
 		{
-			List<RouteOrderMultiplier> result = new List<RouteOrderMultiplier>();
 
-			// Set all driver multipliers (globally applied to any of a driver's possible visits)
-			Dictionary<int, float> driverMultipliers = new Dictionary<int, float>();
-			foreach (RouteDriver driver in Drivers)
+			NpgsqlConnection conn = new NpgsqlConnection("Server=hci.cvwcpfnur8ep.us-east-1.rds.amazonaws.com;Port=5432;User Id=hci_user;Password=Nov299pe;Database=route;");
+			conn.Open();
+
+			try
 			{
-				// Add multiplier to lookup
-				driverMultipliers.Add(driver.ID, CalculateDriverMultiplier(driver, Multipliers));
+				NpgsqlCommand command = new NpgsqlCommand(
+					"INSERT INTO entity_leg(from_id, to_id, distance, duration) " + 
+					"VALUES(" + FromId + ", " + ToId + ", " + Distance + ", " + Duration + ")", conn); 
+
+				command.CommandType = CommandType.Text;
+
+				command.ExecuteScalar();
+			}
+			finally
+			{
+				conn.Close ();
 			}
 
+		}
+
+		public ICollection<DriverTaskMultiplier> GetRoutePenalties(ICollection<Driver> Drivers, ICollection<Task> Tasks)
+		{
+			List<DriverTaskMultiplier> result = new List<DriverTaskMultiplier>();
+
 			// Set route order multipliers (drivers and stops)
-			foreach (RouteOrder order in Orders)
+			foreach (Task task in Tasks)
 			{
 				// Create multiplier record for every driver for this order
-				foreach(RouteDriver driver in Drivers)
+				foreach(Driver driver in Drivers)
 				{
-					result.Add(new RouteOrderMultiplier()
-					           {
-						RouteOrderID = order.ID,
-						RouteDriverID = driver.ID,
-						AdjustmentMultiplier = CalculateDriverOrderMultiplier(driver, order, Multipliers) 
-							+ (driverMultipliers[driver.ID] - 1.0f)
+					result.Add(new DriverTaskMultiplier(){
+						TaskName = task.name,
+						DriverName = driver.name,
+						AdjustmentMultiplier = CalculateDriverTaskMultiplier(driver, task)
 					});
 				}
 			}
 
+
+
 			return result;
 		}
 
-		private float CalculateDriverMultiplier(RouteDriver Driver, IEnumerable<OptimizationTag> Multipliers)
+		private double CalculateDriverMultiplier(Driver Driver, IEnumerable<OptimizationTag> Multipliers)
 		{
-			float result = 1.0f;
+			double result = 1.0;
 
-			string[] driverTags = Driver.Tags.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
-			foreach (string tag in driverTags)
+			// TODO: This is for "global" preferences applied to all visits for the driver, ie: paytype, iniation costs, etc
+
+//			string[] driverTags = Driver.Tags.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
+//			foreach (string tag in driverTags)
+//			{
+//				OptimizationTag optimizationTag = (from m in Multipliers where m.Name == tag && !m.IsExclusive select m).FirstOrDefault();
+//				if (optimizationTag != null)
+//				{
+//					result += (optimizationTag.Multiplier - 1.0f); // multiplier is additive, not compounding
+//				}
+//			}
+
+			return result;
+		}
+
+		private double CalculateDriverTaskMultiplier(Driver Driver, Task Task)
+		{
+			double result = 1.0;
+
+			// check the tag preferences
+			foreach (Pref pref in Task.stop.prefs)
 			{
-				OptimizationTag optimizationTag = (from m in Multipliers where m.Name == tag && !m.IsExclusive select m).FirstOrDefault();
-				if (optimizationTag != null)
+
+				if (pref.exclude) 
 				{
-					result += (optimizationTag.Multiplier - 1.0f); // multiplier is additive, not compounding
+					// don't want this tag
+
+					if(Driver.tags.Contains(pref.tag))
+					{
+						if (pref.required) {
+							// oops, this is a bad one, basically put it out of range
+							return 1000;  // we're done, just send back 1000
+						} else {
+							result += pref.penalty / 100.0 * pref.multiplier; // convert to % of multiplier
+						}
+
+					}
+
+				} else 
+				{
+					// want this tag
+					if(!Driver.tags.Contains(pref.tag))
+					{
+						if (pref.required) {
+							// oops, this is a bad one
+							return 1000;  // we're done, just send back 1000
+						} else {
+							result += pref.penalty / 100.0 * pref.multiplier;  // convert to % of multiplier
+						}
+					}
+
 				}
+
 			}
 
-			return result;
-		}
-
-		private float CalculateDriverOrderMultiplier(RouteDriver Driver, RouteOrder Order, IEnumerable<OptimizationTag> Multipliers)
-		{
-			float result = 1.0f;
-
-			string[] orderTags = Order.Tags.Split(new string[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
-			foreach (string tag in orderTags)
-			{
-				OptimizationTag optimizationTag = (from m in Multipliers where 
-				                                   (m.Name == tag) 
-				                                   || (m.Name.Contains("*") && tag.StartsWith(m.Name.Substring(0, m.Name.IndexOf("*")))) // handle wildcards
-				                                   && m.IsExclusive 
-				                                   select m)
-					.FirstOrDefault();
-
-				if (optimizationTag != null && !Driver.Tags.Contains(tag))
-				{
-					// If optimization tag is not found for the driver, apply multiplier
-					result += (optimizationTag.Multiplier - 1.0f); // multiplier is additive, not compounding
-
-				}
-
-
+			// now check to make sure the driver can perform the service
+			if (!Driver.services.Contains (Task.service.name) && Task.service.name != "Ignore") {
+				// can't perform the service, so penalize
+				return 1000;  // we're done, just send back 1000
 			}
 
-			return result;
+//			if (Task.stop.name == "124") {
+//
+//				Console.WriteLine (Driver.name + ": " + result);
+//			}
+
+			return result;  // only soft constraint penalties were found
 		}
 
-		private static void EnsureEntityIsRoutable(RouteDriver entity)
-		{
-			if(!entity.GeoLat.HasValue || !entity.GeoLon.HasValue)
-				throw new RoutingEntityException("Driver missing geocoding coordinates.", entity.ID);
-		}
-
-		private static void EnsureEntityIsRoutable(RouteStop entity)
-		{
-			if (!entity.GeoLat.HasValue || !entity.GeoLon.HasValue)
-				throw new RoutingEntityException("Stop missing geocoding coordinates.", entity.ID);
-		}
 	}
 }

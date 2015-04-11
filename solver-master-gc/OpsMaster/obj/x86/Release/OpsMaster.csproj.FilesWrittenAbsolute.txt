@@ -1,0 +1,15 @@
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/obj/x86/Release/.NETFramework,Version=v4.0.AssemblyAttribute.cs
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/createinstance.sh
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/startup.sh
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/OpsMaster.exe.mdb
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/OpsMaster.exe
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/obj/x86/Release/OpsMaster.exe
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/obj/x86/Release/OpsMaster.exe.mdb
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/PubNub.dll
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/ServiceStack.Common.dll
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/ServiceStack.dll
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/ServiceStack.ServiceInterface.dll
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/ServiceStack.Text.dll
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/ServiceStack.Interfaces.dll
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/Google.Apis.dll
+/Users/ericodom/Projects/solver-master-gc/OpsMaster/bin/Release/Google.Apis.Compute.v1beta15.dll

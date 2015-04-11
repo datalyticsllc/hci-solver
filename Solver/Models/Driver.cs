@@ -5,14 +5,15 @@ namespace Solver
 {
 	public class Driver
 	{
+		public long id { get; set; }
 		public string name { get; set; }
 		public Location location { get; set; }
 		public int maxStops { get; set; }
 		public int maxWorkTime { get; set; }
 		public TimeWindow timeWindow { get; set; }
 		public List<string> tags { get; set; }
+		public List<string> services { get; set; }
 		public List<Pref> prefs { get; set; }
-
 	}
 }
 

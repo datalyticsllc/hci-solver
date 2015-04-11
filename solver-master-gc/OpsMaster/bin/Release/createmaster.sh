@@ -1,0 +1,2 @@
+#!/bin/bash
+gcutil --service_version="v1beta15" --project="smart-amplifier-286" addinstance optimization-master --metadata_from_file="startup-script:startupmaster.sh" --zone="us-central2-a" --machine_type="n1-standard-1" --network="default" --external_ip_address="ephemeral" --service_account_scopes="https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/devstorage.full_control" --image="https://www.googleapis.com/compute/v1beta15/projects/smart-amplifier-286/global/images/optimization-auto-shutdown"

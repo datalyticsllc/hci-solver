@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB9-8B4A-11D0-8D11-00A0C91BC942}") = "HeuristicLab.Algorithms.EvolutionStrategy-3.3", "HeuristicLab.Algorithms.EvolutionStrategy-3.3.dll", "{FCD2F5EF-93E0-459C-ACDE-6D63DACFE0A7}"
+	ProjectSection(MonoDevelopProperties) = preProject
+		BaseDirectory = ..\..\..\..\..\3.3.8\HeuristicLab.Algorithms.EvolutionStrategy\3.3
+		name = HeuristicLab.Algorithms.EvolutionStrategy-3.3
+		Configurations = $0
+		$0.Configuration = $1
+		$1.name = Default
+		$1.OutputPath = .\
+		$1.ctype = ProjectConfiguration
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Default|Any CPU = Default|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FCD2F5EF-93E0-459C-ACDE-6D63DACFE0A7}.Default|Any CPU.ActiveCfg = Default|Any CPU
+		{FCD2F5EF-93E0-459C-ACDE-6D63DACFE0A7}.Default|Any CPU.Build.0 = Default|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = HeuristicLab.Algorithms.EvolutionStrategy-3.3.dll
+	EndGlobalSection
+EndGlobal

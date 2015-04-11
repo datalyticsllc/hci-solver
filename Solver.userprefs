@@ -1,0 +1,22 @@
+﻿<Properties GitUserInfo="UsingGIT">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release|x86" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Solver/Optimization/OptimizationJob.cs">
+    <Files>
+      <File FileName="Solver/Optimization/OptimizationJob.cs" Line="215" Column="46" />
+      <File FileName="Solver/Optimization/EvoStrat.cs" Line="1" Column="1" />
+      <File FileName="Solver/Program.cs" Line="1" Column="1" />
+      <File FileName="Solver/Routing/Routing.cs" Line="82" Column="5" />
+      <File FileName="Solver/Routing/BingServices.cs" Line="1" Column="1" />
+      <File FileName="Solver/Optimization/OptimizationTagParser.cs" Line="1" Column="1" />
+      <File FileName="Solver/Routing/RoutingEntityException.cs" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="/Users/ericodom/Projects/Solver/Solver/Routing/Routing.cs" line="168" column="1" />
+      <Breakpoint file="/Users/ericodom/Projects/Solver/Solver/Routing/Routing.cs" line="199" column="1" />
+      <Breakpoint file="/Users/ericodom/Projects/Solver/Solver/Routing/Routing.cs" line="230" column="1" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

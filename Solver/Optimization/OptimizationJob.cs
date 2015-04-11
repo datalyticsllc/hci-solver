@@ -12,6 +12,9 @@ using PubNubMessaging.Core;
 using System.IO;
 using System.Net;
 using System.Diagnostics;
+using Npgsql;
+using NpgsqlTypes;
+using Newtonsoft.Json;
 
 namespace Solver
 {
@@ -22,7 +25,6 @@ namespace Solver
 		static public string channel = "routing";
 
 		private int _sleepDuration = 5000;
-		private string _connectionString;
 		private int _threadID = 0;
 		private int _generation = 0;
 		private int _runID = 0;
@@ -33,36 +35,15 @@ namespace Solver
 		private bool _running = false;
 		private bool _ready = false;
 
-		public OptimizationJob(int ThreadID, string ConnectionString, int? SleepDuration)
+		public OptimizationJob(int ThreadID, int? SleepDuration)
 		{
-			if (string.IsNullOrEmpty(ConnectionString))
-				throw new ArgumentException("OptimizationJob: ConnectionString parameter missing.");
-			else
-				_connectionString = ConnectionString;
 
 			_threadID = ThreadID;
 
 			if (SleepDuration.HasValue)
 				_sleepDuration = SleepDuration.Value;
 
-			//InitializeMessaging ();
-			testCall ();
-
-		}
-
-		public void testCall(){
-
-			using (JsonServiceClient client = new JsonServiceClient())
-			{
-				//Console.WriteLine ("Getting next job to process");
-
-				RouteResponse response = client.Get<RouteResponse>("http://homecareintel.com/services/route/26");
-
-				if(response.drivers.Count > 0)
-				{
-					Console.WriteLine ("We have entities! [0]:" + response.drivers[0].name);
-				}
-			};
+			InitializeMessaging ();
 
 		}
 
@@ -82,6 +63,15 @@ namespace Solver
 			//Console.WriteLine(result);
 		}
 
+		private void PublishVrpRunMessage(int runId, int generations, string bestQuality, string bestSolution, string currentResults, string message)
+		{
+			string pMessage = "";
+
+			pMessage = "ID=" + runId + "^Generations=" + generations.ToString () + "^BestQuality=" + bestQuality + "^BestSolution=" + bestSolution + "^Message=" + message;
+
+			SendMessage (pMessage);
+		}
+
 		public void Stop()
 		{
 			_running = false;
@@ -96,109 +86,217 @@ namespace Solver
 			while (_running && _ready)
 			{
 
-				OptimizationRun run = null;
+				OptimizationRun run = new OptimizationRun();
+				RouteResponse response = null;
+				List<Entity> routeEntities = new List<Entity> ();
+				List<RouteLeg> routeLegs = new List<RouteLeg>();
 
-				using (JsonServiceClient client = new JsonServiceClient())
-				{
-					//Console.WriteLine ("Getting next job to process");
+				try{
 
-					RouteJobsResponse response = client.Get<RouteJobsResponse>("http://api.datalyticsllc.com/routing/routejobs/-1");
-					if(response.RouteJobs.Count > 0)
+					// First, let's check to see if there's any jobs to process
+					response = GetNextJobToProcess();
+
+
+					if (response != null)
 					{
-						run = response.RouteJobs [0];
-						_runID = run.ID;
+						// we've got a job!
+						run.ID = response.routeId;
+						_runID = response.routeId;
+						_ready = false;
+						
+						Console.WriteLine ("Set RunID = " + run.ID);
 
-						Console.WriteLine ("Set RunID = " + _runID);
+						List<Int64> driverList = new List<Int64>();
+						List<Int64> stopList = new List<Int64>();
+
+						Console.WriteLine("[" + string.Format("{0:d/M/yyyy HH:mm:ss}", DateTime.Now) + "] Thread " + _threadID + ": Optimization job " + run.ID + " started.");
+
+						NpgsqlConnection conn = new NpgsqlConnection("Server=hci.cvwcpfnur8ep.us-east-1.rds.amazonaws.com;Port=5432;User Id=hci_user;Password=Nov299pe;Database=route;");
+						conn.Open();
+
+						try
+						{
+
+
+							// Update the driver entities
+							foreach(Driver d in response.drivers){
+
+								NpgsqlCommand command = new NpgsqlCommand(
+									"SELECT * FROM update_entity(" + response.customerId.ToString() + "::bigint, " 
+									+ d.name + "::varchar, " 
+									+ d.location.latitude.ToString() + "::float8, " 
+									+ d.location.longitude.ToString() + "::float8, " 
+									+ "2::int2)", conn);
+
+								command.CommandType = CommandType.Text;
+
+								Object result = command.ExecuteScalar();
+
+								// set the driver system id
+								d.id = Convert.ToInt64(result);
+								driverList.Add(Convert.ToInt64(result));
+
+								// now add the driver to the entity list
+								routeEntities.Add(new Entity{
+									id = Convert.ToInt64(result),
+									geoLat = d.location.latitude,
+									geoLon = d.location.longitude
+								});					               
+
+							}
+
+							Console.WriteLine("Drivers: " + string.Join<Int64>(",", driverList));
+
+							// update the stop entities
+							foreach(Task t in response.tasks){
+
+								NpgsqlCommand command = new NpgsqlCommand(
+									"SELECT * FROM update_entity(" + response.customerId.ToString() + "::bigint, " 
+									+ t.stop.name + "::varchar, " 
+									+ t.stop.location.latitude.ToString() + "::float8, " 
+									+ t.stop.location.longitude.ToString() + "::float8, " 
+									+ "1::int2)", conn);
+
+								command.CommandType = CommandType.Text;
+
+								Object result = command.ExecuteScalar();
+
+								// set's the id to the stop ID, to lookup during the routeleg calculation
+								t.id = Convert.ToInt64(result);
+								stopList.Add(Convert.ToInt64(result));	
+
+								// now add the stop to the entity list
+								routeEntities.Add(new Entity{
+									id = Convert.ToInt64(result),
+									geoLat = t.stop.location.latitude,
+									geoLon = t.stop.location.longitude
+								});	
+
+							}
+
+							Console.WriteLine("Stops: " + string.Join<Int64>(",", stopList));
+
+							// now get a list of route legs
+							string drivers = string.Join<Int64>(",", driverList);
+							string stops = string.Join<Int64>(",", stopList);
+
+							NpgsqlCommand legCommand = new NpgsqlCommand("SELECT * FROM calc_entity_matrix('" + drivers + "','" + stops + "')", conn);
+
+
+							NpgsqlDataReader dr = legCommand.ExecuteReader();
+							while(dr.Read())
+							{
+								routeLegs.Add(new RouteLeg{
+									FromID = Convert.ToInt32(dr.GetValue(0)),
+									ToID = Convert.ToInt32(dr.GetValue(1)),
+									DrivingDistance = Convert.ToDecimal(dr.GetValue(2)),
+									DrivingTime = Convert.ToDecimal(dr.GetValue(3))
+								});
+
+							}
+
+
+						}
+
+						finally
+						{
+							conn.Close();
+						}
+
+						// Now calculate the route leg stuff
+						Routing routing = new Routing();
+
+
+						ICollection<RouteLeg> legs = routing.GetRouteLegs(routeEntities, routeLegs, 1, Routing.CostType.Distance);
+						ICollection<DriverTaskMultiplier> legMultipliers = routing.GetRoutePenalties(response.drivers, response.tasks);
+
+						int demand = 1;
+
+						// set the alogorithm manually for demo
+						run.GenerationsToRun = response.generations;
+						run.Algorithm = "ES_MDVRPTW_v3.hl";
+						run.CostOptimization = false;
+						run.DistanceCostRatio = 1.0m;
+						run.AvgLegLength = 20;
+						run.AvgLegPenalty = 0;
+						run.MaxLegLength = 30;
+						run.MaxLegPenalty = 0;
+
+						_evoStrat = new EvoStrat(
+							run, 
+							driverList,
+							stopList,
+							routeEntities,
+							response.drivers, 
+							response.tasks, 
+							legs, 
+							legMultipliers, 
+							run.CostOptimization, 
+							Convert.ToDouble(run.DistanceCostRatio), 
+							Convert.ToDouble(run.AvgLegLength), 
+							Convert.ToDouble(run.MaxLegLength),
+							Convert.ToDouble(run.AvgLegPenalty), 
+							Convert.ToDouble(run.MaxLegPenalty), 
+							demand);
+
+						_evoStrat.StatusUpdate += new EventHandler(Routing_StatusUpdate);
+						_evoStrat.StartOptimization();
+
+
 					}
-				};
-
-				if (run != null)
-				{
-					// we've got a job! don't get the next job off this thread...we're done.  
-					_ready = false;
-					Console.WriteLine("[" + string.Format("{0:d/M/yyyy HH:mm:ss}", DateTime.Now) + "] Thread " + _threadID + ": Optimization job " + run.ID + " started.");
-
-					// need to dynamically switch to the customer database to get the list of drivers and orders
-					ICollection<RouteDriver> drivers = new List<RouteDriver>();
-					ICollection<RouteOrder> orders = new List<RouteOrder>();
-					JsonServiceClient client = new JsonServiceClient("http://api.datalyticsllc.com/coordcare");
-
-					RouteDriversResponse responseDrivers = client.Get(new GetRouteDrivers { Drivers = run.Drivers, ServiceDate = run.ServiceDate});
-					if(responseDrivers.Drivers.Count > 0)
+					else
 					{
-						drivers = responseDrivers.Drivers;
+						//Stop ();
+
+						// No jobs, so terminate instance!
+						Console.WriteLine("[" + string.Format("{0:d/M/yyyy HH:mm:ss}", DateTime.Now) + "] Thread " + _threadID + ": No job to process...");
+
+						//Process shutdown = new Process(); 
+						//shutdown.StartInfo.FileName = "shutdown.sh"; 
+						//shutdown.Start();
+
+
+						Thread.Sleep(_sleepDuration);
 					}
-			
-					RouteOrdersResponse responseOrders = client.Get(new GetRouteOrders { Orders = run.Orders});
-					if(responseOrders.Orders.Count > 0)
-					{
-						orders = responseOrders.Orders;
-					}
-
-
-					// get a list of stops from the orders (ie. patients from the visits).  Used for RouteLeg lookup
-					ICollection<RouteStop> stops = orders.Select(x => new RouteStop(){
-						ID = x.StopID, GeoLat = x.GeoLat, GeoLon = x.GeoLon,
-						Address = x.Address, City = x.City, State = x.State, Zip = x.Zip
-					}).Distinct().ToList();
-				    
-
-					// So we pass the route legs when we call the optimizer, or calculate here?
-					Routing routing = new Routing();
-
-
-					ICollection<RouteLeg> routeLegs = routing.GetRouteLegs(stops, drivers, run.CustomerID, Routing.CostType.Distance);
-
-
-					Console.WriteLine("[" + string.Format("{0:d/M/yyyy HH:mm:ss}", DateTime.Now) + "] Thread " + _threadID + ": Parsing optimization tags - '" + run.Tags + "'.");
-					IEnumerable<OptimizationTag> optimizationTags = OptimizationTagParser.Parse(run.Tags);
-
-					ICollection<RouteOrderMultiplier> legMultipliers = routing.GetRouteMultipliers(orders, drivers, optimizationTags);
-
-
-					int demand = run.MaxCapacity > 0 ? 1 : 0;
-
-					// set the alogorithm manually for demo
-					run.Algorithm = "ES_MDVRPTW_v3.hl";
-
-					_evoStrat = new EvoStrat(
-						run, 
-						drivers, 
-						orders, 
-						routeLegs, 
-						legMultipliers, 
-						run.CostOptimization, 
-						Convert.ToDouble(run.DistanceCostRatio), 
-						Convert.ToDouble(run.AvgLegLength), 
-						Convert.ToDouble(run.MaxLegLength),
-					    Convert.ToDouble(run.AvgLegPenalty), 
-						Convert.ToDouble(run.MaxLegPenalty), 
-						demand, 
-						run.MaxCapacity);
-
-					_evoStrat.StatusUpdate += new EventHandler(Routing_StatusUpdate);
-					_evoStrat.StartOptimization();
-
-					// Set the start time for the optimization
-					UpdateStartTime(run.ID);
-
-
 				}
-				else
-				{
-					//Stop ();
-
-					// No jobs, so terminate instance!
-					Console.WriteLine("[" + string.Format("{0:d/M/yyyy HH:mm:ss}", DateTime.Now) + "] Thread " + _threadID + ": No job to process...");
-
-					//Process shutdown = new Process(); 
-					//shutdown.StartInfo.FileName = "shutdown.sh"; 
-					//shutdown.Start();
-
-
+				catch(Exception exc){
+					// ignore error
 					Thread.Sleep(_sleepDuration);
+					var error = exc;
 				}
 			}  // loop until it gets a job
+		}
+
+		private RouteResponse GetNextJobToProcess(){
+
+			RouteResponse result = null;
+
+			NpgsqlConnection conn = new NpgsqlConnection("Server=hci.cvwcpfnur8ep.us-east-1.rds.amazonaws.com;Port=5432;User Id=hci_user;Password=Nov299pe;Database=route;");
+			conn.Open();
+
+			try
+			{
+
+				NpgsqlCommand legCommand = new NpgsqlCommand("SELECT * FROM get_next_route()", conn);
+
+				NpgsqlDataReader dr = legCommand.ExecuteReader();
+				while(dr.Read())
+				{
+					var jsonObject = dr.GetValue(1).ToString();
+
+					result = JsonConvert.DeserializeObject<RouteResponse>(jsonObject);
+					result.routeId = Convert.ToInt32(dr.GetValue(0));
+
+				}
+			}
+			catch(Exception exc){
+				var error = exc;
+			}
+			finally {
+				conn.Close ();
+			}
+
+			return result;
 		}
 
 		private void Routing_StatusUpdate(object sender, EventArgs e)
@@ -213,11 +311,8 @@ namespace Solver
 				// Stored ProcVersion
 				if(evt.State == EvoStrat.StrategyState.Completed || evt.State == EvoStrat.StrategyState.Stopped)
 				{
-					UpdateVrpRun(evt.Run.ID, evt.Run.Generations, evt.Run.BestQuality, evt.Run.BestSolution, evt.Run.CurrentResults, evt.Message);
+					//UpdateVrpRun(evt.Run.ID, evt.Run.Generations, evt.Run.BestQuality, evt.Run.BestSolution, evt.Run.CurrentResults, evt.Message);
 					PublishVrpRunMessage(evt.Run.ID, evt.Run.Generations, evt.Run.BestQuality, evt.Run.BestSolution, evt.Run.CurrentResults, evt.Message);
-				
-					// Set the stop time for the optimization
-					UpdateStopTime(evt.Run.ID);
 
 					// now restart the listener
 					if(evt.State == EvoStrat.StrategyState.Stopped)
@@ -229,7 +324,7 @@ namespace Solver
 				{
 					_generation = evt.Run.Generations;
 
-					UpdateVrpRun(evt.Run.ID, evt.Run.Generations, evt.Run.BestQuality, evt.Run.BestSolution, evt.Run.CurrentResults, evt.Message);
+					//UpdateVrpRun(evt.Run.ID, evt.Run.Generations, evt.Run.BestQuality, evt.Run.BestSolution, evt.Run.CurrentResults, evt.Message);
 					PublishVrpRunMessage(evt.Run.ID, evt.Run.Generations, evt.Run.BestQuality, evt.Run.BestSolution, evt.Run.CurrentResults, evt.Message);
 
 					switch (evt.State)
@@ -251,186 +346,11 @@ namespace Solver
 					}
 				}
 			}
-			catch (Exception exc)
+			catch
 			{
-				var ignore = true;
-			}
-			//TODO: Add switch() statement to handle all StrategyState states
-		}
-
-		// Thread-safe method to get the next optimization job to run
-		private OptimizationRun GetNextOptimizationJob()
-		{
-			OptimizationRun run = null;
-
-			SqlConnection conn = new SqlConnection("Data Source=CoordCare.com;Initial Catalog=Optimization;Integrated Security=False;User ID=sa;Password=Nov299pe");
-			SqlCommand cmd;
-			SqlDataAdapter sda;
-			DataSet tables = new DataSet();
-
-			conn.Open();
-
-			// get the next
-			cmd = new SqlCommand();
-			cmd.Connection = conn;
-			cmd.CommandType = CommandType.StoredProcedure;
-			cmd.CommandText = "GetNextOptimizationRun";
-
-			tables = new DataSet();
-
-			sda = new SqlDataAdapter(cmd);
-			sda.Fill(tables);
-
-			if (tables.Tables[0].Rows.Count == 0)
-			{
-				conn.Close();
-				return null;
-			}
-			else
-			{
-				foreach (DataRow r in tables.Tables[0].Rows)
-				{
-					try
-					{
-
-						run = new OptimizationRun();
-
-						run.ID = Convert.ToInt32(r["ID"].ToString());
-						run.CustomerID = Convert.ToInt32(r["CustomerID"].ToString());
-						run.GenerationsToRun = Convert.ToInt32(r["GenerationsToRun"].ToString());
-						run.ServiceDate = Convert.ToDateTime(r["ServiceDate"].ToString());
-						run.Drivers = r["Drivers"].ToString();
-						run.Orders = r["Orders"].ToString();
-						run.Algorithm = r["Algorithm"].ToString();
-						run.Demo = r["Demo"] == null ? false : Convert.ToInt32(r["Demo"]) == 1;
-						run.Tags = r["Tags"].ToString();
-						run.CostOptimization = Convert.ToBoolean(r["CostOptimization"].ToString());
-						run.DistanceCostRatio = Convert.ToDecimal(r["DistanceCostRatio"].ToString());
-						run.AvgLegLength = Convert.ToInt32(r["AvgLegLength"].ToString());
-						run.MaxLegLength = Convert.ToInt32(r["MaxLegLength"].ToString());
-						run.AvgLegPenalty = Convert.ToDecimal(r["AvgLegPenalty"].ToString());
-						run.MaxLegPenalty = Convert.ToDecimal(r["MaxLegPenalty"].ToString());
-						run.MaxCapacity = Convert.ToInt32(r["MaxCapacity"].ToString());
-					}
-					catch (Exception exc)
-					{
-						Console.WriteLine("[" + string.Format("{0:d/M/yyyy HH:mm:ss}", DateTime.Now) + "] Thread " + _threadID + ": Error -- " + exc.ToString());
-					}
-				}
-
-				conn.Close();
-
+				//var ignore = true;
 			}
 
-			return run;
-		}
-
-		private void PublishVrpRunMessage(int runId, int generations, string bestQuality, string bestSolution, string currentResults, string message)
-		{
-			string pMessage = "";
-
-			pMessage = "ID=" + runId + "^Generations=" + generations.ToString () + "^BestQuality=" + bestQuality + "^BestSolution=" + bestSolution + "^Message=" + message;
-
-			SendMessage (pMessage);
-		}
-
-		// Thread-save method to update an optimization job
-		private void UpdateVrpRun(int runId, int generations, string bestQuality, string bestSolution, string currentResults, string message)
-		{
-
-			SqlCommand cmd;
-			DataSet tables = new DataSet();
-
-			try
-			{
-				SqlConnection conn = new SqlConnection("Data Source=CoordCare.com;Initial Catalog=Optimization;Integrated Security=False;User ID=sa;Password=Nov299pe");
-
-				conn.Open();
-
-				cmd = new SqlCommand();
-				cmd.Connection = conn;
-				cmd.CommandType = CommandType.StoredProcedure;
-				cmd.CommandText = "UpdateOptimizationRun";
-				cmd.Parameters.AddWithValue("@ID", runId);
-				cmd.Parameters.AddWithValue("@BestQuality", bestQuality == null ? "" : bestQuality);
-				cmd.Parameters.AddWithValue("@Generations", generations);
-				cmd.Parameters.AddWithValue("@BestSolution", bestSolution == null ? "" : bestSolution);
-				cmd.Parameters.AddWithValue("@CurrentResults", currentResults == null ? "" : currentResults);
-				cmd.Parameters.AddWithValue("@Status", message);
-
-				var killRun = cmd.ExecuteScalar();
-
-				conn.Close();
-
-				if (Convert.ToInt32(killRun) == 1)
-				{
-					_evoStrat.StopJob();
-				}
-			}
-			catch (Exception exc)
-			{
-				var error = exc.ToString();
-			}
-		}
-
-		// Thread-save method to update an optimization job
-		private void UpdateStartTime(int runId)
-		{
-
-			SqlCommand cmd;
-
-			try
-			{
-				SqlConnection conn = new SqlConnection("Data Source=CoordCare.com;Initial Catalog=Optimization;Integrated Security=False;User ID=sa;Password=Nov299pe");
-
-				conn.Open();
-
-				cmd = new SqlCommand();
-				cmd.Connection = conn;
-				cmd.CommandType = CommandType.StoredProcedure;
-				cmd.CommandText = "SetOptimizationRunStartTime";
-				cmd.Parameters.AddWithValue("@ID", runId);
-				cmd.Parameters.AddWithValue("@StartTime", DateTime.Now);
-
-				cmd.ExecuteScalar();
-
-				conn.Close();
-
-			}
-			catch (Exception exc)
-			{
-				var error = exc.ToString();
-			}
-		}
-
-		// Thread-save method to update an optimization job
-		private void UpdateStopTime(int runId)
-		{
-
-			SqlCommand cmd;
-
-			try
-			{
-				SqlConnection conn = new SqlConnection("Data Source=CoordCare.com;Initial Catalog=Optimization;Integrated Security=False;User ID=sa;Password=Nov299pe");
-
-				conn.Open();
-
-				cmd = new SqlCommand();
-				cmd.Connection = conn;
-				cmd.CommandType = CommandType.StoredProcedure;
-				cmd.CommandText = "SetOptimizationRunStopTime";
-				cmd.Parameters.AddWithValue("@ID", runId);
-				cmd.Parameters.AddWithValue("@StopTime", DateTime.Now);
-
-				cmd.ExecuteScalar();
-
-				conn.Close();
-
-			}
-			catch (Exception exc)
-			{
-				var error = exc.ToString();
-			}
 		}
 
 	}

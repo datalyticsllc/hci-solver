@@ -40,10 +40,10 @@ namespace Solver
 			routeRequest.Options = routeOptions;
 			routeRequest.Waypoints = new BingRouteService.Waypoint[2];
 
-			BingRouteService.Waypoint wp1 = new BingRouteService.Waypoint { Location = new BingRouteService.Location { Latitude = lat1, Longitude = lon1 } };
+			BingRouteService.Waypoint wp1 = new BingRouteService.Waypoint { Location = new BingRouteService.Location { Latitude = lat1, Longitude = lon1, LatitudeSpecified = true, LongitudeSpecified = true } };
 			routeRequest.Waypoints[0] = wp1;
 
-			BingRouteService.Waypoint wp2 = new BingRouteService.Waypoint { Location = new BingRouteService.Location { Latitude = lat2, Longitude = lon2 } };
+			BingRouteService.Waypoint wp2 = new BingRouteService.Waypoint { Location = new BingRouteService.Location { Latitude = lat2, Longitude = lon2, LatitudeSpecified = true, LongitudeSpecified = true } };
 			routeRequest.Waypoints[1] = wp2;
 
 			BingRouteService.RouteResponse routeResponse = routing.CalculateRoute(routeRequest);
@@ -69,10 +69,10 @@ namespace Solver
 			routeRequest.Options = routeOptions;
 			routeRequest.Waypoints = new BingRouteService.Waypoint[2];
 
-			BingRouteService.Waypoint wp1 = new BingRouteService.Waypoint { Location = new BingRouteService.Location { Latitude = lat1, Longitude = lon1 } };
+			BingRouteService.Waypoint wp1 = new BingRouteService.Waypoint { Location = new BingRouteService.Location { Latitude = lat1, Longitude = lon1, LatitudeSpecified = true, LongitudeSpecified = true } };
 			routeRequest.Waypoints[0] = wp1;
 
-			BingRouteService.Waypoint wp2 = new BingRouteService.Waypoint { Location = new BingRouteService.Location { Latitude = lat2, Longitude = lon2 } };
+			BingRouteService.Waypoint wp2 = new BingRouteService.Waypoint { Location = new BingRouteService.Location { Latitude = lat2, Longitude = lon2, LatitudeSpecified = true, LongitudeSpecified = true } };
 			routeRequest.Waypoints[1] = wp2;
 
 			BingRouteService.RouteResponse routeResponse = routing.CalculateRoute(routeRequest);

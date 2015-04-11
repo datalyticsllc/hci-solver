@@ -19,7 +19,7 @@ namespace Solver
 	{
 		// Configuration
 		private StrategyState _strategyState = StrategyState.Stopped;
-		private double _elapsedTime = 0;  // elapsed time tracking (may not need if host handles database calls)
+		//private double _elapsedTime = 0;  // elapsed time tracking (may not need if host handles database calls)
 		public class StatusUpdateEventArgs : EventArgs
 		{
 			public OptimizationRun Run { get; set; }
@@ -32,17 +32,16 @@ namespace Solver
 			Stopped, Running, Paused, Completed
 		}
 
-
 		// Problem
-		private List<int> _stopIds = new List<int>();  // stores the visit IDs
-		private List<int> _driverIds = new List<int>();  // stores the staff IDs
-		private List<RouteOrder> _orders = new List<RouteOrder>();
-		private List<RouteDriver> _drivers = new List<RouteDriver>();
-		private DoubleMatrix _coordinates = new DoubleMatrix();
+		private List<long> _stopIds = new List<long>();  // stores the visit IDs
+		private List<long> _driverIds = new List<long>();  // stores the staff IDs
+		//private DoubleMatrix _coordinates = new DoubleMatrix();
 		private IntArray _vehicleAssignment = new IntArray();
-		private List<RouteEntity> _routeEntities = new List<RouteEntity>();
+		private List<Driver> _drivers = new List<Driver> ();
+		private List<Task> _tasks = new List<Task> ();
+		private List<Entity> _routeEntities = new List<Entity>();
 		private List<RouteLeg> _routeLegs = new List<RouteLeg>();
-		private List<RouteOrderMultiplier> _mutipliers = new List<RouteOrderMultiplier>();
+		private List<DriverTaskMultiplier> _mutipliers = new List<DriverTaskMultiplier>();
 
 		// cost-optimization stuff
 		private bool _costOptimization = false;
@@ -69,12 +68,24 @@ namespace Solver
 			}
 		}
 
-		public EvoStrat(OptimizationRun run, ICollection<RouteDriver> drivers, ICollection<RouteOrder> orders, ICollection<RouteLeg> routeLegs, ICollection<RouteOrderMultiplier> routeMutipliers, 
-		                bool costOptimization, double distanceCostRatio, double avgLegLength, double maxLegLength, double avgLegPenalty, double maxLegPenalty, double demand, double capacity)
-		{
+		public EvoStrat(
+			OptimizationRun run, 
+			ICollection<long> driverIds,
+			ICollection<long> taskIds,
+			ICollection<Entity> entities, 
+			ICollection<Driver> drivers, 
+			ICollection<Task> tasks, 
+			ICollection<RouteLeg> routeLegs, 
+			ICollection<DriverTaskMultiplier> routeMutipliers, 
+		    bool costOptimization, double distanceCostRatio, double avgLegLength, double maxLegLength, 
+			double avgLegPenalty, double maxLegPenalty, double demand){
+
 			_run = run;
+			_driverIds = driverIds.ToList();
+			_stopIds = taskIds.ToList();
+			_routeEntities = entities.ToList();
 			_drivers = drivers.ToList();
-			_orders = orders.ToList();
+			_tasks = tasks.ToList();
 			_routeLegs = routeLegs.ToList();
 			_mutipliers = routeMutipliers.ToList();
 			_costOptimization = costOptimization;
@@ -84,30 +95,11 @@ namespace Solver
 			_maxLegLength = maxLegLength;
 			_maxLegPenalty = maxLegPenalty;
 			_demand = demand;
-			_capacity = capacity;
 		}
 
 		public void StartOptimization()
 		{
 			UpdateRun("Starting Optimization", StrategyState.Running);
-
-			// setup the Entity List
-			_routeEntities.AddRange(RouteEntity.Convert(_drivers));
-
-			// add an entity for each visit, but we add the patient id, so our distance matrix will work.
-			// we do this the handle multiple orders (visits) to the same stop (patient)
-			foreach (var o in _orders)
-			{
-				_routeEntities.Add(new RouteEntity { TypeID = 1, ID = o.StopID, GeoLat = o.GeoLat, GeoLon = o.GeoLon });
-			}
-
-			_driverIds = (from s in _drivers select s.ID).ToList ();
-			_stopIds = (from s in _orders select s.ID).ToList ();
-
-
-			//TODO: We need to change where the algorithms are stored.  Ideally, we'd have them 
-			// in a folder in the project directory
-			//string algorithmPath = @"\Algorithms\ES_MDVRPTW_v3.hl";
 
 			string algorithmPath = Path.Combine(Path.Combine(Directory.GetCurrentDirectory(), "Algorithms"), _run.Algorithm);
 
@@ -173,17 +165,17 @@ namespace Solver
 			//var pi = problem.ProblemInstance.Clone() as HeuristicLab.Problems.VehicleRouting.ProblemInstances.MDCVRPTWProblemInstance;
 			HeuristicLab.Problems.VehicleRouting.Datalytics.ProblemInstances.MDCVRPTWProblemInstance pi = new HeuristicLab.Problems.VehicleRouting.Datalytics.ProblemInstances.MDCVRPTWProblemInstance();
 
-			pi.Cities.Value = _orders.Count;
+			pi.Cities.Value = _tasks.Count;
 			pi.Depots.Value = _drivers.Count;
 			pi.Vehicles.Value = _drivers.Count;  // only allow 1 vehicle per depot
 			pi.DistanceFactor.Value = 1.0;
 			pi.FleetUsageFactor.Value = 0.0;
 			pi.UseDistanceMatrix.Value = true;
 
-			pi.Capacity = new DoubleArray(GetCapacity(_drivers.Count));
+			pi.Capacity = new DoubleArray(GetCapacity());
 			pi.Coordinates = new DoubleMatrix(GetCoordinates());
 
-			_coordinates = pi.Coordinates;
+			//_coordinates = pi.Coordinates;
 
 			//string patientList = string.Join(",", _stopIds);
 			//string staffList = string.Join(",", _driverIds);
@@ -209,13 +201,13 @@ namespace Solver
 
 			UpdateRun("Distance Matrix Loaded", StrategyState.Running);
 
-			pi.Demand = new DoubleArray(GetDemand(_orders.Count));
+			pi.Demand = new DoubleArray(GetDemand(_tasks.Count));
 
 			double dueTime = 1.7976931348623157E308;  // Max double, we need this for some reason, 0 didn't work
 
-			pi.DueTime = new DoubleArray(GetDueTime(_orders.Count + _drivers.Count, dueTime));
-			pi.ServiceTime = new DoubleArray(GetServiceTime(_orders.Count));
-			pi.ReadyTime = new DoubleArray(GetReadyTime(_orders.Count + _drivers.Count));
+			pi.DueTime = new DoubleArray(GetDueTime(_tasks.Count + _drivers.Count, dueTime));
+			pi.ServiceTime = new DoubleArray(GetServiceTime(_tasks.Count));
+			pi.ReadyTime = new DoubleArray(GetReadyTime(_tasks.Count + _drivers.Count));
 			pi.VehicleDepotAssignment = new IntArray(SetVehicleDepotAssignment(_drivers.Count));
 
 			// set the vehicle assigment array
@@ -245,25 +237,23 @@ namespace Solver
 		{
 
 
-			// depot (staff) coords are loaded in the first n slots, the patients afterwards
-			double[,] coords = new double[_drivers.Count + _orders.Count, 2];
+			// depot (driver) coords are loaded in the first n slots, the stops afterwards
+			double[,] coords = new double[_drivers.Count + _tasks.Count, 2];
 
 			// add the driver coords first
 			int i = 0;
-			foreach (RouteDriver d in _drivers)
+			foreach (Driver d in _drivers)
 			{
-				//_driverIds.Add(d.ID);
-				coords[i, 0] = Convert.ToDouble(d.GeoLat);
-				coords[i, 1] = Convert.ToDouble(d.GeoLon);
+				coords[i, 0] = Convert.ToDouble(d.location.latitude);
+				coords[i, 1] = Convert.ToDouble(d.location.longitude);
 				i++;
 			}
 
 			// now add the stop coords
-			foreach (RouteOrder s in _orders)
+			foreach (Task s in _tasks)
 			{
-				// _stopIds.Add(s.ID);
-				coords[i, 0] = Convert.ToDouble(s.GeoLat);
-				coords[i, 1] = Convert.ToDouble(s.GeoLon);
+				coords[i, 0] = Convert.ToDouble(s.stop.location.latitude);
+				coords[i, 1] = Convert.ToDouble(s.stop.location.longitude);
 				i++;
 			}
 
@@ -282,9 +272,7 @@ namespace Solver
 					var start = _routeEntities[i];
 					var end = _routeEntities[j];
 
-					RouteLeg leg = _routeLegs.Where(x => x.FromID == start.ID
-					                                && x.FromTypeID == start.TypeID
-					                                && x.ToID == end.ID && x.ToTypeID == end.TypeID).FirstOrDefault();
+					RouteLeg leg = _routeLegs.Where(x => x.FromID == start.id && x.ToID == end.id).FirstOrDefault();
 
 					distanceMatrix[i, j] = Convert.ToDouble(leg.DrivingDistance);
 				}
@@ -305,9 +293,7 @@ namespace Solver
 					var start = _routeEntities[i];
 					var end = _routeEntities[j];
 
-					RouteLeg leg = _routeLegs.Where(x => x.FromID == start.ID
-					                                && x.FromTypeID == start.TypeID
-					                                && x.ToID == end.ID && x.ToTypeID == end.TypeID).FirstOrDefault();
+					RouteLeg leg = _routeLegs.Where(x => x.FromID == start.id && x.ToID == end.id).FirstOrDefault();
 
 					timeMatrix[i, j] = Convert.ToDouble(leg.DrivingTime / 60);
 				}
@@ -319,19 +305,19 @@ namespace Solver
 		private DoubleMatrix CreateQualityMatrix()
 		{
 
-			DoubleMatrix qualityMatrix = new DoubleMatrix(_driverIds.Count, _stopIds.Count);
+			DoubleMatrix qualityMatrix = new DoubleMatrix(_drivers.Count, _tasks.Count);
 
 			for (int i = 0; i < qualityMatrix.Rows; i++)
 			{
 				for (int j = 0; j < qualityMatrix.Columns; j++)
 				{
-					var start = _driverIds[i];
-					var end = _stopIds[j];
+					var start = _drivers[i].name;
+					var end = _tasks [j].name;
 
-					// replace with the new RouteLegMultiplier
-					RouteOrderMultiplier mutiplier = _mutipliers.Where(x => x.RouteDriverID == start && x.RouteOrderID == end).FirstOrDefault();
+					// TODO: Calculate the DriverTaskMultiplier fro Pref and Tags
+					DriverTaskMultiplier multiplier = _mutipliers.Where(x => x.DriverName == start && x.TaskName == end).FirstOrDefault();
 
-					qualityMatrix[i, j] = Convert.ToDouble(mutiplier.AdjustmentMultiplier);
+					qualityMatrix[i, j] = multiplier.AdjustmentMultiplier; // Convert.ToDouble(mutiplier.AdjustmentMultiplier);
 
 				}
 			}
@@ -346,7 +332,7 @@ namespace Solver
 
 			for (int i = 0; i < perVisitCostArray.Length; i++)
 			{
-				perVisitCostArray[i] = Convert.ToDouble(_drivers[i].PerVisitCost);
+				perVisitCostArray [i] = 0; //Convert.ToDouble(_drivers[i].PerVisitCost);
 
 			}
 
@@ -360,18 +346,19 @@ namespace Solver
 
 			for (int i = 0; i < perMileCostArray.Length; i++)
 			{
-				perMileCostArray[i] = Convert.ToDouble(_drivers[i].PerMileCost);
+				perMileCostArray [i] = 0; //Convert.ToDouble(_drivers[i].PerMileCost);
 
 			}
 
 			return perMileCostArray;
 		}
 
-		private int[] SetVehicleDepotAssignment(int staff)
+		// This set each driver starting point to their house
+		private int[] SetVehicleDepotAssignment(int drivers)
 		{
-			int[] depots = new int[staff];
+			int[] depots = new int[drivers];
 
-			for (int i = 0; i < staff; i++)
+			for (int i = 0; i < drivers; i++)
 			{
 				depots[i] = i;
 			}
@@ -379,13 +366,13 @@ namespace Solver
 			return depots;
 		}
 
-		private double[] GetCapacity(int staff)
+		private double[] GetCapacity()
 		{
-			double[] capacity = new double[staff];
+			double[] capacity = new double[_drivers.Count];
 
-			for (int i = 0; i < staff; i++)
+			for (int i = 0; i < _drivers.Count; i++)
 			{
-				capacity[i] = _capacity;
+				capacity[i] = Convert.ToDouble(_drivers[i].maxStops);
 			}
 
 			return capacity;
@@ -399,7 +386,7 @@ namespace Solver
 			{
 				if (i < _drivers.Count)
 				{
-					dueTime[i] = Convert.ToDouble(_drivers[i].Availability);
+					dueTime [i] = Convert.ToDouble(_drivers[i].maxWorkTime / 60);
 				}
 				else
 				{
@@ -416,7 +403,7 @@ namespace Solver
 
 			for (int i = 0; i < count; i++)
 			{
-				serviceTime[i] = Convert.ToDouble(_orders[i].ServiceTime);
+				serviceTime [i] = Convert.ToDouble(_tasks[i].service.duration);
 			}
 
 			return serviceTime;
@@ -504,9 +491,9 @@ namespace Solver
 					}
 				}
 			}
-			catch (Exception exc)
+			catch
 			{
-				bool ignore = true;
+				//bool ignore = true;
 			}
 
 		}
@@ -583,7 +570,8 @@ namespace Solver
 					int vehicle = solution.Solution.GetVehicleAssignment(tourIndex);
 					int depot =  _vehicleAssignment[vehicle];
 
-					result += _driverIds[depot].ToString() + ":";
+					//result += _driverIds[depot].ToString() + ":";
+					result += _drivers[depot].name + ":";
 
 					var stops = string.Empty;
 
@@ -598,7 +586,25 @@ namespace Solver
 							stops += ",";
 						}
 
-						stops += _stopIds[s - 1].ToString();
+						//stops += _stopIds[s - 1].ToString();
+						stops += _tasks[s - 1].name;
+
+						var penalty = _mutipliers.Where(x => x.DriverName == _drivers[depot].name && x.TaskName == _tasks[s - 1].name).FirstOrDefault();
+
+						if(penalty.AdjustmentMultiplier >= 1000){
+							stops += "~2";
+						}
+						else if(penalty.AdjustmentMultiplier > 1){
+							stops += "~1";
+						}
+						else{
+							stops += "~0";
+						}
+
+						if(_drivers[depot].name == "2" && _tasks[s - 1].stop.name == "100"){
+							var debug = true;
+						}
+					
 
 					}
 
@@ -606,7 +612,7 @@ namespace Solver
 
 				}
 			}
-			catch (Exception exc)
+			catch
 			{
 				//alg.Stop();
 				_strategyState = StrategyState.Stopped;
@@ -661,10 +667,10 @@ namespace Solver
 					UpdateTime = DateTime.Now
 				});
 			}
-			catch (Exception exc)
+			catch
 			{
 				_strategyState = StrategyState.Stopped;
-				var error = exc.ToString();
+				//var error = exc.ToString();
 			}
 		}
 

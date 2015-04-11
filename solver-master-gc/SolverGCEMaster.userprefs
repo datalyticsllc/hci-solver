@@ -1,0 +1,16 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release|x86" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="OpsMaster/createinstance.sh">
+    <Files>
+      <File FileName="OpsMaster/Program.cs" Line="1" Column="1" />
+      <File FileName="OpsMaster/Master.cs" Line="45" Column="7" />
+      <File FileName="OpsMaster/createinstance.sh" Line="1" Column="1" />
+      <File FileName="OpsMaster/Models/OptimizationRun.cs" Line="1" Column="1" />
+      <File FileName="OpsMaster/Models/RouteJobsResponse.cs" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

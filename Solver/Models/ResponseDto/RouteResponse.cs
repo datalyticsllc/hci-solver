@@ -6,6 +6,7 @@ namespace Solver
 {
 	public class RouteResponse
 	{
+		public int routeId { get; set; }
 		public int customerId { get; set; }
 		public int generations { get; set; }
 		public List<Pref> prefs { get; set; }

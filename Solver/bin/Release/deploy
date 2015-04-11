@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#FILES="/Users/ericodom/projects/Solver/Solver/bin/release"
+#for f in $FILES
+#do
+#	echo "Processing $f"
+#done
+
+for file in $*
+do
+ # do something on $file
+ echo $file
+# gcutil --zone="us-central2-a" --project="smart-amplifier-286" push "test1" "$file" /etc/solver
+done
+
+

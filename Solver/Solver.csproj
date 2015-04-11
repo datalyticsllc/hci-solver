@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7D1549DE-DF48-40CD-A69B-0ABD7D0A78A3}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Solver</RootNamespace>
+    <AssemblyName>Solver</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="HeuristicLab.Common-3.3">
+      <HintPath>Libs\HeuristicLab.Common-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Core-3.3">
+      <HintPath>Libs\HeuristicLab.Core-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Data-3.3">
+      <HintPath>Libs\HeuristicLab.Data-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="HeuristicLab.Optimization-3.3">
+      <HintPath>Libs\HeuristicLab.Optimization-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Problems.TravelingSalesman-3.3">
+      <HintPath>Libs\HeuristicLab.Problems.TravelingSalesman-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Algorithms.EvolutionStrategy-3.3">
+      <HintPath>Libs\HeuristicLab.Algorithms.EvolutionStrategy-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack">
+      <HintPath>Libs\ServiceStack.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Common">
+      <HintPath>Libs\ServiceStack.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Interfaces">
+      <HintPath>Libs\ServiceStack.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.ServiceInterface">
+      <HintPath>Libs\ServiceStack.ServiceInterface.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Text">
+      <HintPath>Libs\ServiceStack.Text.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Problems.Instances-3.3">
+      <HintPath>Libs\HeuristicLab.Problems.Instances-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Collections-3.3">
+      <HintPath>Libs\HeuristicLab.Collections-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>Libs\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Operators.Views.GraphVisualization-3.3">
+      <HintPath>Libs\HeuristicLab.Operators.Views.GraphVisualization-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.SequentialEngine-3.3">
+      <HintPath>Libs\HeuristicLab.SequentialEngine-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Tracing-3.3">
+      <HintPath>Libs\HeuristicLab.Tracing-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Persistence-3.3">
+      <HintPath>Libs\HeuristicLab.Persistence-3.3.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Libs\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Problems.VehicleRouting-3.4">
+      <HintPath>Libs\HeuristicLab.Problems.VehicleRouting-3.4.dll</HintPath>
+    </Reference>
+    <Reference Include="PubNub">
+      <HintPath>Libs\PubNub.dll</HintPath>
+    </Reference>
+    <Reference Include="Npgsql" />
+    <Reference Include="Npgsql">
+      <HintPath>Libs\Npgsql.dll</HintPath>
+    </Reference>
+    <Reference Include="HeuristicLab.Problems.VehicleRouting.Datalytics-3.4">
+      <HintPath>..\..\heuristic-lab\HeuristicLab.Problems.VehicleRouting.Datalytics\bin\HeuristicLab.Problems.VehicleRouting.Datalytics-3.4.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Models\OptimizationRun.cs" />
+    <Compile Include="Models\RouteLeg.cs" />
+    <Compile Include="Models\OptimizationTag.cs" />
+    <Compile Include="Web References\BingRouteService\Reference.cs">
+      <DependentUpon>Reference.map</DependentUpon>
+    </Compile>
+    <Compile Include="Web References\BingGeocodeService\Reference.cs">
+      <DependentUpon>Reference.map</DependentUpon>
+    </Compile>
+    <Compile Include="Optimization\OptimizationJob.cs" />
+    <Compile Include="Optimization\EvoStrat.cs" />
+    <Compile Include="Routing\BingServices.cs" />
+    <Compile Include="Routing\Routing.cs" />
+    <Compile Include="Routing\RoutingEntityException.cs" />
+    <Compile Include="Optimization\OptimizationTagParser.cs" />
+    <Compile Include="Models\Entity.cs" />
+    <Compile Include="Models\Driver.cs" />
+    <Compile Include="Models\ResponseDto\RouteResponse.cs" />
+    <Compile Include="Models\Location.cs" />
+    <Compile Include="Models\TimeWindow.cs" />
+    <Compile Include="Models\Pref.cs" />
+    <Compile Include="Models\Task.cs" />
+    <Compile Include="Models\Stop.cs" />
+    <Compile Include="Models\Service.cs" />
+    <Compile Include="Models\DriverTaskMultiplier.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Libs\" />
+    <Folder Include="Models\" />
+    <Folder Include="Routing\" />
+    <Folder Include="Optimization\" />
+    <Folder Include="Models\ResponseDto\" />
+    <Folder Include="Algorithms\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.TimeSeriesPrognosis.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.TimeSeriesPrognosis.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Regression.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Regression.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Classification.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Classification.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.DataAnalysis.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.DataAnalysis.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.LawnMower.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.LawnMower.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Operators.Views.GraphVisualization.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Operators.Views.GraphVisualization.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.ArtificialAnt.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.ArtificialAnt.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.DataAnalysis-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.DataAnalysis-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting.Datalytics.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting.Datalytics.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.TimeSeriesPrognosis-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.TimeSeriesPrognosis-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Scheduling.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Scheduling.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.DataAnalysis.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.DataAnalysis.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.OKB.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.OKB.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.Benchmarks.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.Benchmarks.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.QuadraticAssignment.Algorithms-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.QuadraticAssignment.Algorithms-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.QuadraticAssignment.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.QuadraticAssignment.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Regression-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Regression-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Classification-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic.Classification-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Encodings.SymbolicExpressionTreeEncoding.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Encodings.SymbolicExpressionTreeEncoding.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Encodings.PermutationEncoding.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Encodings.PermutationEncoding.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.TestFunctions.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.TestFunctions.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.TravelingSalesman.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.TravelingSalesman.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Parameters.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Parameters.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Operators.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Operators.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Scheduling-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Scheduling-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Encodings.ScheduleEncoding.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Encodings.ScheduleEncoding.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.LawnMower-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.LawnMower-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.Access.Administration-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.Access.Administration-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.Hive.JobManager-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.Hive.JobManager-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.LinearAssignment.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.LinearAssignment.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.Hive.Administrator-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.Hive.Administrator-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.QuadraticAssignment-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.QuadraticAssignment-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis.Symbolic-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.ArtificialAnt-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.ArtificialAnt-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.OneMax.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.OneMax.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Knapsack.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Knapsack.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Optimization.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Optimization.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Encodings.ScheduleEncoding-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Encodings.ScheduleEncoding-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.RAPGA-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.RAPGA-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.GradientDescent-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.GradientDescent-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.ScatterSearch-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.ScatterSearch-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.Access.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.Access.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.LinearAssignment-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.LinearAssignment-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.Hive.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.Hive.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Encodings.SymbolicExpressionTreeEncoding-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Encodings.SymbolicExpressionTreeEncoding-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.VariableNeighborhoodSearch-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.VariableNeighborhoodSearch-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.ParticleSwarmOptimization-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.ParticleSwarmOptimization-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.NSGA2-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.NSGA2-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.OffspringSelectionGeneticAlgorithm-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.OffspringSelectionGeneticAlgorithm-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.GeneticAlgorithm-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.GeneticAlgorithm-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.TestFunctions-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.TestFunctions-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.TravelingSalesman-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.TravelingSalesman-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.EvolutionStrategy-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.EvolutionStrategy-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.LocalSearch-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.LocalSearch-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.TabuSearch-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.TabuSearch-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.SimulatedAnnealing-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.SimulatedAnnealing-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Knapsack-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Knapsack-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.OneMax-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.OneMax-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Analysis.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Analysis.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.OKB-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.OKB-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Encodings.BinaryVectorEncoding-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Encodings.BinaryVectorEncoding-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Encodings.IntegerVectorEncoding-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Encodings.IntegerVectorEncoding-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Encodings.RealVectorEncoding-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Encodings.RealVectorEncoding-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Encodings.PermutationEncoding-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Encodings.PermutationEncoding-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Analysis-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Analysis-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Optimizer-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Optimizer-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.Access-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.Access-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.VehicleRouting.Views-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.VehicleRouting.Views-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.DataAnalysis-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.DataAnalysis-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.TSPLIB.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.TSPLIB.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Operators.Programmable.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Operators.Programmable.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Optimization.Operators-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Optimization.Operators-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.DebugEngine.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.DebugEngine.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Algorithms.Benchmarks-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Algorithms.Benchmarks-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.Hive-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.Hive-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.DataAnalysis-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Operators.Views.GraphVisualization-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Operators.Views.GraphVisualization-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Operators.Programmable-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Operators.Programmable-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Selection-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Selection-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Random-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Random-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.ParallelEngine.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.ParallelEngine.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Optimization-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Optimization-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Data.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Data.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Operators-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Operators-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Hive-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Hive-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.ParallelEngine-3.3.dll" />
+    <None Include="Libs\HeuristicLab.ParallelEngine-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.DebugEngine-3.3.dll" />
+    <None Include="Libs\HeuristicLab.DebugEngine-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Parameters-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Parameters-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Core.Views-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Core.Views-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.SequentialEngine-3.3.dll" />
+    <None Include="Libs\HeuristicLab.SequentialEngine-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Data-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Data-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.VehicleRouting-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.VehicleRouting-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Core-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Core-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting.Datalytics-3.4.dll" />
+    <None Include="Libs\HeuristicLab.Problems.VehicleRouting.Datalytics-3.4.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.Scheduling-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.Scheduling-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.CordeauGQAP-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.CordeauGQAP-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.TSPLIB-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.TSPLIB-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.QAPLIB-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.QAPLIB-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.ElloumiCTAP-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances.ElloumiCTAP-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.MainForm.WindowsForms-3.3.dll" />
+    <None Include="Libs\HeuristicLab.MainForm.WindowsForms-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Collections-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Collections-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Problems.Instances-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Problems.Instances-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.MainForm-3.3.dll" />
+    <None Include="Libs\HeuristicLab.MainForm-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.CodeEditor-3.3.dll" />
+    <None Include="Libs\HeuristicLab.CodeEditor-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Persistence-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Persistence-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Visualization.ChartControlsExtensions-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Visualization.ChartControlsExtensions-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Clients.Common-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Clients.Common-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Common-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Common-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Common.Resources-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Common.Resources-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.Tracing-3.3.dll" />
+    <None Include="Libs\HeuristicLab.Tracing-3.3.dll.mdb" />
+    <None Include="Libs\HeuristicLab.PluginInfrastructure-3.3.dll" />
+    <None Include="Libs\HeuristicLab.PluginInfrastructure-3.3.dll.mdb" />
+    <None Include="Web References\BingRouteService\routeservice.xsd" />
+    <None Include="Web References\BingRouteService\routeservice3.xsd" />
+    <None Include="Web References\BingRouteService\routeservice1.xsd" />
+    <None Include="Web References\BingRouteService\routeservice1.wsdl" />
+    <None Include="Web References\BingRouteService\routeservice.wsdl" />
+    <None Include="Web References\BingRouteService\routeservice2.xsd" />
+    <None Include="Web References\BingRouteService\Reference.map">
+      <Generator>MSDiscoCodeGenerator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <None Include="Web References\BingGeocodeService\GeocodeService1.xsd" />
+    <None Include="Web References\BingGeocodeService\GeocodeService.wsdl" />
+    <None Include="Web References\BingGeocodeService\GeocodeService4.xsd" />
+    <None Include="Web References\BingGeocodeService\GeocodeService2.xsd" />
+    <None Include="Web References\BingGeocodeService\GeocodeService1.wsdl" />
+    <None Include="Web References\BingGeocodeService\GeocodeService.xsd" />
+    <None Include="Web References\BingGeocodeService\GeocodeService3.xsd" />
+    <None Include="Web References\BingGeocodeService\Reference.map">
+      <Generator>MSDiscoCodeGenerator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <None Include="Algorithms\ES_MDVRPTW_v1.hl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Algorithms\ES_MDVRPTW_v2.hl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Algorithms\ES_MDVRPTW_v3.hl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Algorithms\ES_TSP_v1.hl" />
+    <None Include="Algorithms\Test.hl" />
+    <None Include="Libs\Newtonsoft.Json.dll" />
+    <None Include="Libs\PubNub.dll" />
+    <None Include="Libs\Npgsql.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferences Include="Web References" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferenceUrl Include="http://dev.virtualearth.net/webservices/v1/metadata/routeservice/routeservice.wsdl">
+      <UrlBehavior>Dynamic</UrlBehavior>
+      <RelPath>Web References\BingRouteService</RelPath>
+      <UpdateFromURL>http://dev.virtualearth.net/webservices/v1/metadata/routeservice/routeservice.wsdl</UpdateFromURL>
+    </WebReferenceUrl>
+    <WebReferenceUrl Include="http://dev.virtualearth.net/webservices/v1/metadata/geocodeservice/GeocodeService.wsdl">
+      <UrlBehavior>Dynamic</UrlBehavior>
+      <RelPath>Web References\BingGeocodeService</RelPath>
+      <UpdateFromURL>http://dev.virtualearth.net/webservices/v1/metadata/geocodeservice/GeocodeService.wsdl</UpdateFromURL>
+    </WebReferenceUrl>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DiscoveryClientResultsFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Results>
+    <DiscoveryClientResult filename="GeocodeService1.xsd" referenceType="System.Web.Services.Discovery.SchemaReference" url="http://dev.virtualearth.net/webservices/v1/metadata/geocodeservice/GeocodeService1.xsd" />
+    <DiscoveryClientResult filename="GeocodeService.wsdl" referenceType="System.Web.Services.Discovery.ContractReference" url="http://dev.virtualearth.net/webservices/v1/metadata/geocodeservice/GeocodeService.wsdl" />
+    <DiscoveryClientResult filename="GeocodeService4.xsd" referenceType="System.Web.Services.Discovery.SchemaReference" url="http://dev.virtualearth.net/webservices/v1/metadata/geocodeservice/GeocodeService4.xsd" />
+    <DiscoveryClientResult filename="GeocodeService2.xsd" referenceType="System.Web.Services.Discovery.SchemaReference" url="http://dev.virtualearth.net/webservices/v1/metadata/geocodeservice/GeocodeService2.xsd" />
+    <DiscoveryClientResult filename="GeocodeService1.wsdl" referenceType="System.Web.Services.Discovery.ContractReference" url="http://dev.virtualearth.net/webservices/v1/metadata/geocodeservice/GeocodeService1.wsdl" />
+    <DiscoveryClientResult filename="GeocodeService.xsd" referenceType="System.Web.Services.Discovery.SchemaReference" url="http://dev.virtualearth.net/webservices/v1/metadata/geocodeservice/GeocodeService.xsd" />
+    <DiscoveryClientResult filename="GeocodeService3.xsd" referenceType="System.Web.Services.Discovery.SchemaReference" url="http://dev.virtualearth.net/webservices/v1/metadata/geocodeservice/GeocodeService3.xsd" />
+  </Results>
+</DiscoveryClientResultsFile>
